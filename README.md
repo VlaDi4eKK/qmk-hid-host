@@ -10,13 +10,14 @@ Application is written in Rust which gives easy access to HID libraries, low-lev
 
 ## Supported platforms/providers
 
-|              | Windows            | Linux                           | MacOS              |
-| ------------ | ------------------ | ------------------------------- | ------------------ |
-| Time         | :heavy_check_mark: | :heavy_check_mark:              | :heavy_check_mark: |
-| Volume       | :heavy_check_mark: | :heavy_check_mark: (PulseAudio) | :heavy_check_mark: |
-| Input layout | :heavy_check_mark: | :heavy_check_mark: (X11)        | :heavy_check_mark: |
-| Media info   | :heavy_check_mark: | :heavy_check_mark: (D-Bus)      |                    |
-| Relay        | :heavy_check_mark: | :heavy_check_mark:              | :heavy_check_mark: |
+|              | Windows            | Linux                           | MacOS                        |
+| ------------ | ------------------ | ------------------------------- | ------------------           |
+| Time         | :heavy_check_mark: | :heavy_check_mark:              | :heavy_check_mark:           |
+| Volume       | :heavy_check_mark: | :heavy_check_mark: (PulseAudio) | :heavy_check_mark:           |
+| Input layout | :heavy_check_mark: | :heavy_check_mark: (X11)        | :heavy_check_mark:           |
+| Media info   | :heavy_check_mark: | :heavy_check_mark: (D-Bus)      | :heavy_check_mark: (Spotify) |
+| Relay        | :heavy_check_mark: | :heavy_check_mark:              | :heavy_check_mark:           |
+| Weather      |  |               | :heavy_check_mark:           |
 
 MacOS is partially supported, as I don't own any Apple devices, feel free to raise PRs.
 
@@ -138,13 +139,17 @@ When you verified that the application works with your keyboard, you can use `qm
 3. Start `qmk-hid-host`, add it to autorun if needed
 
 ### MacOS
+> [!NOTE]
+> To configure the weather, you need to replace your `Hamburg` with your city (example: Cairo); here is its respective repository to see more configurations: [chubin/wttr.in](https://github.com/chubin/wttr.in) - ⛅ The right way to check the weather
 
 1. Download `qmk-hid-host`
 2. Modify `qmk-hid-host.json`
-3. Add your layouts, for example:
+3. Add your layouts or your local weather, for example:
 
    ```json
    "layouts": ["ABC", "Russian"],
+   "weather": {
+     "url": "wttr.in/Hamburg?format=%t"
    ```
 
    if you don't know what layout are installed in you system, run qmk-hid-host with the layouts listed above, change lang and look at terminal output:
@@ -179,6 +184,7 @@ When you verified that the application works with your keyboard, you can use `qm
 
 ## Changelog
 
+- 2025-11-11 - add support for weather and spotify with MacOS
 - 2024-10-03 - add support for multiple devices, restructure config
 - 2024-09-15 - add MacOS support
 - 2024-02-06 - add Linux support
