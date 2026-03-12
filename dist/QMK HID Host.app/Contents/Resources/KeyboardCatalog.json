@@ -1,0 +1,32 @@
+{
+  "vendors": [
+    {
+      "name": "Ergohaven",
+      "models": [
+        {
+          "name": "K:03",
+          "revisions": [
+            {
+              "name": "Standard Raw HID",
+              "matchers": [
+                {
+                  "vendorId": "0xe126",
+                  "productId": "0x0070",
+                  "productName": "K:03"
+                }
+              ],
+              "devices": [
+                {
+                  "name": "K:03",
+                  "productId": "0x0070",
+                  "usage": 97,
+                  "usagePage": 65376
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

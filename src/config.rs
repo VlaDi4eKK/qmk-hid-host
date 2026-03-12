@@ -43,12 +43,12 @@ pub fn load_config(path: PathBuf) -> &'static Config {
 
     let default_config = Config {
         devices: vec![Device {
-            name: None,
-            product_id: 0x0844,
-            usage: None,
-            usage_page: None,
+            name: Some("K:03".to_string()),
+            product_id: 0x0070,
+            usage: Some(0x61),
+            usage_page: Some(0xff60),
         }],
-        layouts: vec!["en".to_string()],
+        layouts: default_layouts(),
         reconnect_delay: None,
         weather: Some(WeatherConfig {
             url: "wttr.in/Hamburg?format=%t".to_string(),
@@ -69,6 +69,16 @@ pub fn load_config(path: PathBuf) -> &'static Config {
     tracing::info!("New config file created at {:?}", path);
 
     CONFIG.get_or_init(|| default_config)
+}
+
+#[cfg(target_os = "macos")]
+fn default_layouts() -> Vec<String> {
+    vec!["US".to_string(), "RussianWin".to_string()]
+}
+
+#[cfg(not(target_os = "macos"))]
+fn default_layouts() -> Vec<String> {
+    vec!["en".to_string(), "ru".to_string()]
 }
 
 fn string_to_hex<'de, D>(deserializer: D) -> Result<u16, D::Error>

@@ -170,6 +170,39 @@ When you verified that the application works with your keyboard, you can use `qm
    1. You're wrong with productId in your config. Check `qmk-hid-host -p`
    2. Close Vial app and try again
 
+#### Menu bar app
+
+To build a `.app` bundle that runs as a menu bar app (without a Dock icon), run:
+
+```sh
+./scripts/build-macos-app.sh
+```
+
+The bundle is created at `dist/QMK HID Host.app`.
+
+This wrapper starts the Rust host in the background and stores the default config at:
+
+```text
+~/Library/Application Support/qmk-hid-host/qmk-hid-host.json
+```
+
+Logs are written to:
+
+```text
+~/Library/Logs/qmk-hid-host/qmk-hid-host.log
+```
+
+Use `Edit Config` from the menu bar app to change `qmk-hid-host.json` in-place. The editor validates JSON before saving and has a `Save & Restart` action to reload the host without leaving the app.
+
+The settings window also shows:
+
+- detected macOS keyboard layouts in `code -> localized name` format and writes their codes into `layouts`
+- keyboard selectors (`vendor -> model -> version/profile`) backed by `KeyboardCatalog.json`, so support for new keyboards can be added without touching Swift code
+- a `Detect Keyboards` action that runs `qmk-hid-host -p`, tries to match a known keyboard profile, and falls back to a minimal `devices` config if no profile is known
+- weather controls to enable/disable weather, set the city, and test that `wttr.in` returns a value before saving
+
+Use `Launch at Login` in the menu to register the app in `~/Library/LaunchAgents` and start it automatically after login.
+
 ## Development
 
 ### Nix
