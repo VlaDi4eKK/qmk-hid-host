@@ -65,28 +65,33 @@ jobs:
           name: linux
 
   build-macos:
-    name: "[Macos] Build and Publish"
+    name: "[macOS] Build and Publish"
     runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build
-        run: cargo build --release
+      - name: Build app bundle
+        run: ./scripts/build-macos-app.sh
 
-      - name: Install cargo-make
-        uses: davidB/rust-cargo-make@v1
+      - name: Pack app bundle for release
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "dist/QMK HID Host.app" \
+            "QMK-HID-Host-macos-app.zip"
 
-      - name: Publish files
-        run: cargo make dist
-
-      - name: Zip artifact for deployment
-        run: cd dist && zip ../macos.zip *
+      - name: Pack CLI binary for release
+        run: |
+          ditto -c -k --keepParent \
+            "target/release/qmk-hid-host" \
+            "QMK-HID-Host-macos-cli.zip"
 
       - name: Upload files
         uses: actions/upload-artifact@v4
         with:
-          path: macos.zip
+          path: |
+            QMK-HID-Host-macos-app.zip
+            QMK-HID-Host-macos-cli.zip
           name: macos
 
   pre-release:
