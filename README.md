@@ -150,7 +150,7 @@ When you verified that the application works with your keyboard, you can use `qm
    ```json
    "layouts": ["US", "RussianWin"],
    "weather": {
-     "url": "wttr.in/Orenburg?format=%t"
+     "url": "wttr.in/Hamburg?format=%t"
    ```
 
    if you don't know what layout are installed in you system, run qmk-hid-host with the layouts listed above, change lang and look at terminal output:
@@ -211,6 +211,22 @@ The settings window also shows:
 - weather controls to enable/disable weather, set the city, and test that `wttr.in` returns a value before saving
 
 Use `Launch at Login` in the menu to register the app in `~/Library/LaunchAgents` and start it automatically after login.
+
+#### GitHub releases
+
+Pushing a tag like `v0.1.0` triggers `.github/workflows/release.yml` and publishes downloadable assets to the GitHub release page:
+
+- `QMK-HID-Host-macos-app.zip` - macOS menu bar app bundle
+- `QMK-HID-Host-macos-cli.zip` - macOS CLI binary
+- `QMK-HID-Host-linux.zip` - Linux CLI build
+- `QMK-HID-Host-windows.zip` - Windows CLI build
+
+Example:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
 
 ## Development
 

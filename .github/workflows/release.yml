@@ -1,0 +1,119 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    name: "[Windows] Build and Package"
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Install cargo-make
+        uses: davidB/rust-cargo-make@v1
+
+      - name: Publish files
+        run: cargo make dist
+
+      - name: Pack CLI binary
+        shell: powershell
+        run: Compress-Archive -Path dist/* -DestinationPath QMK-HID-Host-windows.zip
+
+      - name: Upload files
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: QMK-HID-Host-windows.zip
+
+  build-ubuntu:
+    name: "[Ubuntu] Build and Package"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: ./install-build-deps.sh
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Install cargo-make
+        uses: davidB/rust-cargo-make@v1
+
+      - name: Publish files
+        run: cargo make dist
+
+      - name: Pack CLI binary
+        run: cd dist && zip -r ../QMK-HID-Host-linux.zip *
+
+      - name: Upload files
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: QMK-HID-Host-linux.zip
+
+  build-macos:
+    name: "[macOS] Build and Package"
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build app bundle
+        run: ./scripts/build-macos-app.sh
+
+      - name: Pack app bundle
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "dist/QMK HID Host.app" \
+            "QMK-HID-Host-macos-app.zip"
+
+      - name: Pack CLI binary
+        run: |
+          ditto -c -k --keepParent \
+            "target/release/qmk-hid-host" \
+            "QMK-HID-Host-macos-cli.zip"
+
+      - name: Upload files
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: |
+            QMK-HID-Host-macos-app.zip
+            QMK-HID-Host-macos-cli.zip
+
+  release:
+    name: Publish Release
+    needs:
+      - build-windows
+      - build-ubuntu
+      - build-macos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download files
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mapfile -t files < <(find release-assets -type f | sort)
+          gh release create "${GITHUB_REF_NAME}" "${files[@]}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
