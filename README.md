@@ -100,6 +100,7 @@ Default configuration is set to [stront](https://github.com/zzeneg/stront). For 
 {
   "devices": [
     {
+      "name": "stront",
       "productId": "0x0844"
     }
   ],
@@ -147,16 +148,16 @@ When you verified that the application works with your keyboard, you can use `qm
 3. Add your layouts or your local weather, for example:
 
    ```json
-   "layouts": ["ABC", "Russian"],
+   "layouts": ["US", "RussianWin"],
    "weather": {
-     "url": "wttr.in/Hamburg?format=%t"
+     "url": "wttr.in/Orenburg?format=%t"
    ```
 
    if you don't know what layout are installed in you system, run qmk-hid-host with the layouts listed above, change lang and look at terminal output:
 
    ```
-   INFO qmk_hid_host::providers::layout::macos: new layout: 'ABC', layout list: ["ABC", "Russian"]
-   INFO qmk_hid_host::providers::layout::macos: new layout: 'Russian', layout list: ["ABC", "Russian"]
+   INFO qmk_hid_host::providers::layout::macos: new layout: 'US', layout list: ["US", "RussianWin"]
+   INFO qmk_hid_host::providers::layout::macos: new layout: 'RussianWin', layout list: ["US", "RussianWin"]
    ```
 
    "new layout:" is what you need
@@ -186,6 +187,12 @@ This wrapper starts the Rust host in the background and stores the default confi
 ~/Library/Application Support/qmk-hid-host/qmk-hid-host.json
 ```
 
+On the first launch, if this file does not exist yet, the menu bar app creates it automatically:
+
+- starts from the original `stront/en` fallback config
+- replaces `layouts` with the actual selectable keyboard layouts from the current macOS system
+- tries to detect a connected keyboard with `qmk-hid-host -p` and, if it matches `KeyboardCatalog.json`, writes the matching `devices` entry from the catalog
+
 Logs are written to:
 
 ```text
@@ -197,7 +204,9 @@ Use `Edit Config` from the menu bar app to change `qmk-hid-host.json` in-place. 
 The settings window also shows:
 
 - detected macOS keyboard layouts in `code -> localized name` format and writes their codes into `layouts`
+- layout order is taken from the current macOS system order, and the editor can also write it in reverse order when needed for keyboard-side index mapping
 - keyboard selectors (`vendor -> model -> version/profile`) backed by `KeyboardCatalog.json`, so support for new keyboards can be added without touching Swift code
+- Ergohaven `K:03` is grouped as one model with versions `v3`, `Pro 43mm`, `Pro 65mm`, and `Planeta v2`
 - a `Detect Keyboards` action that runs `qmk-hid-host -p`, tries to match a known keyboard profile, and falls back to a minimal `devices` config if no profile is known
 - weather controls to enable/disable weather, set the city, and test that `wttr.in` returns a value before saving
 

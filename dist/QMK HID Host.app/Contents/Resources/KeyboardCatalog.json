@@ -4,10 +4,56 @@
       "name": "Ergohaven",
       "models": [
         {
-          "name": "K:03",
+          "name": "M4CR0Pad v2",
           "revisions": [
             {
               "name": "Standard Raw HID",
+              "matchers": [
+                {
+                  "vendorId": "0xe126",
+                  "productId": "0x0041",
+                  "productName": "M4CR0Pad v2"
+                }
+              ],
+              "devices": [
+                {
+                  "name": "M4CR0Pad v2",
+                  "productId": "0x0041",
+                  "usage": 97,
+                  "usagePage": 65376
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Trackball Mini",
+          "revisions": [
+            {
+              "name": "Standard Raw HID",
+              "matchers": [
+                {
+                  "vendorId": "0xe126",
+                  "productId": "0x0090",
+                  "productName": "Trackball Mini"
+                }
+              ],
+              "devices": [
+                {
+                  "name": "Trackball Mini",
+                  "productId": "0x0090",
+                  "usage": 97,
+                  "usagePage": 65376
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "K:03",
+          "revisions": [
+            {
+              "name": "v3",
               "matchers": [
                 {
                   "vendorId": "0xe126",
@@ -19,6 +65,83 @@
                 {
                   "name": "K:03",
                   "productId": "0x0070",
+                  "usage": 97,
+                  "usagePage": 65376
+                }
+              ]
+            },
+            {
+              "name": "Pro 43mm",
+              "matchers": [
+                {
+                  "vendorId": "0xe126",
+                  "productId": "0x00a0",
+                  "productName": "K:03 Pro 43mm"
+                }
+              ],
+              "devices": [
+                {
+                  "name": "K:03 Pro 43mm",
+                  "productId": "0x00a0",
+                  "usage": 97,
+                  "usagePage": 65376
+                }
+              ]
+            },
+            {
+              "name": "Pro 65mm",
+              "matchers": [
+                {
+                  "vendorId": "0xe126",
+                  "productId": "0x00a1",
+                  "productName": "K:03 Pro 65mm"
+                }
+              ],
+              "devices": [
+                {
+                  "name": "K:03 Pro 65mm",
+                  "productId": "0x00a1",
+                  "usage": 97,
+                  "usagePage": 65376
+                }
+              ]
+            },
+            {
+              "name": "Planeta v2",
+              "matchers": [
+                {
+                  "vendorId": "0xe126",
+                  "productId": "0x0031",
+                  "productName": "K:03 Planeta v2"
+                }
+              ],
+              "devices": [
+                {
+                  "name": "K:03 Planeta v2",
+                  "productId": "0x0031",
+                  "usage": 97,
+                  "usagePage": 65376
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "HPD v2",
+          "revisions": [
+            {
+              "name": "Standard Raw HID",
+              "matchers": [
+                {
+                  "vendorId": "0xe126",
+                  "productId": "0x0051",
+                  "productName": "HPD v2"
+                }
+              ],
+              "devices": [
+                {
+                  "name": "HPD v2",
+                  "productId": "0x0051",
                   "usage": 97,
                   "usagePage": 65376
                 }

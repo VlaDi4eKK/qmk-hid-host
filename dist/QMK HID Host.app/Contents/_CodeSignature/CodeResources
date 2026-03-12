@@ -10,7 +10,7 @@
 		</data>
 		<key>Resources/KeyboardCatalog.json</key>
 		<data>
-		eH86NNgoBYYoBCmI+A/+gLWz+es=
+		8d/Jg4QBBIaFKQhHVSfZi5Nhz7g=
 		</data>
 		<key>Resources/StatusIcon.svg</key>
 		<data>
@@ -23,10 +23,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			76ln+6mHtKay5FltR4nHZUOgbME=
+			FB1XV8ojo9heQ34DhPQ68BZw6C4=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"efa967fba987b4a6b2e4596d4789c76543a06cc1"</string>
+			<string>cdhash H"141d5757ca23a3d85e437e0384f43af01670e82e"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
@@ -39,7 +39,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			b1ee2CVUDU9GahtPLzYz98sHXfpgTYLTfLC8EJo/BDs=
+			2UWvkZfUHRI2SoIEVfu5oi79GC9RNiOCLxRvtYAjZyE=
 			</data>
 		</dict>
 		<key>Resources/StatusIcon.svg</key>

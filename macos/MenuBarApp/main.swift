@@ -128,6 +128,243 @@ private func loadKeyboardCatalog() -> [KeyboardVendor] {
     return catalog.vendors
 }
 
+private func defaultConfigObject() -> [String: Any] {
+    [
+        "devices": [
+            [
+                "name": "stront",
+                "productId": "0x0844",
+            ],
+        ],
+        "layouts": ["en"],
+    ]
+}
+
+private func formattedJSONString(from object: Any) throws -> String {
+    let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
+    guard var formattedText = String(data: data, encoding: .utf8) else {
+        throw NSError(domain: "QMKHIDHost", code: 12, userInfo: [NSLocalizedDescriptionKey: "Failed to render formatted JSON."])
+    }
+
+    formattedText.append("\n")
+    return formattedText
+}
+
+private final class ConfigEditorWindow: NSWindow {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard event.type == .keyDown else {
+            return super.performKeyEquivalent(with: event)
+        }
+
+        let flags = event.modifierFlags.intersection([.command, .shift, .option, .control])
+        guard let characters = event.charactersIgnoringModifiers?.lowercased() else {
+            return super.performKeyEquivalent(with: event)
+        }
+
+        let selector: Selector? = switch (characters, flags) {
+        case ("x", [.command]):
+            #selector(NSText.cut(_:))
+        case ("c", [.command]):
+            #selector(NSText.copy(_:))
+        case ("v", [.command]):
+            #selector(NSText.paste(_:))
+        case ("a", [.command]):
+            #selector(NSText.selectAll(_:))
+        case ("z", [.command]):
+            Selector(("undo:"))
+        case ("z", [.command, .shift]):
+            Selector(("redo:"))
+        default:
+            nil
+        }
+
+        if let selector, NSApp.sendAction(selector, to: nil, from: self) {
+            return true
+        }
+
+        return super.performKeyEquivalent(with: event)
+    }
+}
+
+private func preferredSystemLayoutOrderTokens() -> [String] {
+    guard
+        let defaults = UserDefaults(suiteName: "com.apple.HIToolbox"),
+        let inputSources = defaults.array(forKey: "AppleEnabledInputSources")
+    else {
+        return []
+    }
+
+    return inputSources.compactMap { source in
+        guard
+            let dictionary = source as? [String: Any],
+            (dictionary["InputSourceKind"] as? String) == "Keyboard Layout"
+        else {
+            return nil
+        }
+
+        if let inputSourceID = dictionary["InputSourceID"] as? String {
+            return inputSourceID.split(separator: ".").last.map(String.init) ?? inputSourceID
+        }
+
+        if let keyboardLayoutName = dictionary["KeyboardLayout Name"] as? String {
+            return keyboardLayoutName
+        }
+
+        return nil
+    }
+}
+
+private func availableSystemLayouts() -> [SystemLayout] {
+    let inputSources = TISCreateInputSourceList(nil, false).takeRetainedValue() as NSArray
+    var layouts: [SystemLayout] = []
+    var seenCodes = Set<String>()
+
+    for case let inputSource as TISInputSource in inputSources {
+        guard stringProperty(for: inputSource, key: kTISPropertyInputSourceType) == (kTISTypeKeyboardLayout as String) else {
+            continue
+        }
+
+        if let isEnabled = boolProperty(for: inputSource, key: kTISPropertyInputSourceIsEnabled), !isEnabled {
+            continue
+        }
+
+        if let isSelectCapable = boolProperty(for: inputSource, key: kTISPropertyInputSourceIsSelectCapable), !isSelectCapable {
+            continue
+        }
+
+        guard
+            let inputSourceID = stringProperty(for: inputSource, key: kTISPropertyInputSourceID),
+            let localizedName = stringProperty(for: inputSource, key: kTISPropertyLocalizedName)
+        else {
+            continue
+        }
+
+        let code = inputSourceID.split(separator: ".").last.map(String.init) ?? inputSourceID
+        if seenCodes.insert(code).inserted {
+            layouts.append(SystemLayout(code: code, localizedName: localizedName))
+        }
+    }
+
+    let preferredOrderTokens = preferredSystemLayoutOrderTokens()
+    guard !preferredOrderTokens.isEmpty else {
+        return layouts
+    }
+
+    var remainingLayouts = layouts
+    var orderedLayouts: [SystemLayout] = []
+    for token in preferredOrderTokens {
+        if let index = remainingLayouts.firstIndex(where: { $0.code == token || $0.localizedName == token }) {
+            orderedLayouts.append(remainingLayouts.remove(at: index))
+        }
+    }
+
+    orderedLayouts.append(contentsOf: remainingLayouts)
+    return orderedLayouts
+}
+
+private func parseDetectedHIDDevices(from output: String) -> [DetectedHIDDevice] {
+    let cleanedOutput = output.replacingOccurrences(
+        of: #"\u{001B}\[[0-9;]*m"#,
+        with: "",
+        options: .regularExpression
+    )
+
+    let pattern = #"HID: VID=([0-9A-Fa-f]+), PID=([0-9A-Fa-f]+), usage_page=([^,]+), usage=([^,]+), productId=(0x[0-9A-Fa-f]+) product="([^"]*)""#
+    guard let regex = try? NSRegularExpression(pattern: pattern) else {
+        return []
+    }
+
+    let nsOutput = cleanedOutput as NSString
+    let matches = regex.matches(in: cleanedOutput, range: NSRange(location: 0, length: nsOutput.length))
+    return matches.compactMap { match in
+        guard match.numberOfRanges >= 7 else {
+            return nil
+        }
+
+        let vendorId = nsOutput.substring(with: match.range(at: 1))
+        let usagePage = Int(nsOutput.substring(with: match.range(at: 3)))
+        let usage = Int(nsOutput.substring(with: match.range(at: 4)))
+        let productId = nsOutput.substring(with: match.range(at: 5))
+        let productName = nsOutput.substring(with: match.range(at: 6))
+
+        return DetectedHIDDevice(
+            vendorId: "0x\(vendorId.lowercased())",
+            productId: productId.lowercased(),
+            usagePage: usagePage,
+            usage: usage,
+            productName: productName,
+            rawLine: nsOutput.substring(with: match.range)
+        )
+    }
+}
+
+private func matchedCatalogSelection(
+    in keyboardCatalog: [KeyboardVendor],
+    for devices: [DetectedHIDDevice]
+) -> (vendor: Int, model: Int, revision: Int, device: DetectedHIDDevice)? {
+    for (vendorIndex, vendor) in keyboardCatalog.enumerated() {
+        for (modelIndex, model) in vendor.models.enumerated() {
+            for (revisionIndex, revision) in model.revisions.enumerated() {
+                for device in devices where revision.matchers.contains(where: { $0.matches(device) }) {
+                    return (vendorIndex, modelIndex, revisionIndex, device)
+                }
+            }
+        }
+    }
+
+    return nil
+}
+
+private func runProcess(executableURL: URL, arguments: [String], environment: [String: String] = [:]) throws -> String {
+    let process = Process()
+    let pipe = Pipe()
+    var mergedEnvironment = ProcessInfo.processInfo.environment
+    for (key, value) in environment {
+        mergedEnvironment[key] = value
+    }
+
+    process.executableURL = executableURL
+    process.arguments = arguments
+    process.environment = mergedEnvironment
+    process.standardOutput = pipe
+    process.standardError = pipe
+
+    try process.run()
+    process.waitUntilExit()
+
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output = String(decoding: data, as: UTF8.self)
+
+    guard process.terminationStatus == 0 else {
+        let message = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        throw NSError(
+            domain: "QMKHIDHost",
+            code: Int(process.terminationStatus),
+            userInfo: [NSLocalizedDescriptionKey: message.isEmpty ? "Process exited with status \(process.terminationStatus)." : message]
+        )
+    }
+
+    return output
+}
+
+private func stringProperty(for inputSource: TISInputSource, key: CFString) -> String? {
+    guard let property = TISGetInputSourceProperty(inputSource, key) else {
+        return nil
+    }
+
+    let value = Unmanaged<CFTypeRef>.fromOpaque(property).takeUnretainedValue()
+    return value as? String
+}
+
+private func boolProperty(for inputSource: TISInputSource, key: CFString) -> Bool? {
+    guard let property = TISGetInputSourceProperty(inputSource, key) else {
+        return nil
+    }
+
+    let value = Unmanaged<CFTypeRef>.fromOpaque(property).takeUnretainedValue()
+    return (value as? NSNumber)?.boolValue
+}
+
 @main
 struct QMKHIDHostMenuBarMain {
     private static let appDelegate = AppDelegate()
@@ -143,6 +380,7 @@ struct QMKHIDHostMenuBarMain {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let fileManager = FileManager.default
     private let launchAgentLabel = "com.zzeneg.qmk-hid-host.login-item"
+    private let keyboardCatalog = loadKeyboardCatalog()
     private var statusItem: NSStatusItem!
     private let menu = NSMenu()
     private let stateMenuItem = NSMenuItem(title: "Launching...", action: nil, keyEquivalent: "")
@@ -210,6 +448,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         do {
             try prepareSupportDirectories()
+            try ensureInitialConfigIfNeeded()
             try prepareLogFile()
             syncLaunchAtLoginMenuItem()
             try startHost()
@@ -302,6 +541,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func prepareSupportDirectories() throws {
         try fileManager.createDirectory(at: appSupportDirectory, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: logDirectory, withIntermediateDirectories: true)
+    }
+
+    private func ensureInitialConfigIfNeeded() throws {
+        guard !fileManager.fileExists(atPath: configURL.path) else {
+            return
+        }
+
+        var config = defaultConfigObject()
+        let systemLayouts = availableSystemLayouts()
+        if !systemLayouts.isEmpty {
+            config["layouts"] = systemLayouts.map(\.code)
+        }
+
+        if
+            fileManager.isExecutableFile(atPath: hostBinaryURL.path),
+            let output = try? runProcess(
+                executableURL: hostBinaryURL,
+                arguments: ["-p"],
+                environment: ["RUST_LOG": "info"]
+            )
+        {
+            let devices = parseDetectedHIDDevices(from: output)
+            if let match = matchedCatalogSelection(in: keyboardCatalog, for: devices) {
+                let revision = keyboardCatalog[match.vendor].models[match.model].revisions[match.revision]
+                config["devices"] = revision.devices.map(\.jsonObject)
+                updateState("Prepared config for \(match.device.productName)")
+            } else if !systemLayouts.isEmpty {
+                updateState("Prepared config with system layouts")
+            }
+        }
+
+        let formatted = try formattedJSONString(from: config)
+        try formatted.write(to: configURL, atomically: true, encoding: .utf8)
     }
 
     private func prepareLogFile() throws {
@@ -551,6 +823,7 @@ final class ConfigEditorWindowController: NSWindowController {
     private let modelPopUpButton = NSPopUpButton()
     private let revisionPopUpButton = NSPopUpButton()
     private let weatherEnabledButton = NSButton(checkboxWithTitle: "Enable Weather", target: nil, action: nil)
+    private let reverseLayoutOrderButton = NSButton(checkboxWithTitle: "Reverse order in config", target: nil, action: nil)
     private let weatherCityField = NSTextField()
     private var detectedSystemLayouts: [SystemLayout] = []
     private var isSynchronizingControls = false
@@ -561,7 +834,7 @@ final class ConfigEditorWindowController: NSWindowController {
         self.onSaveAndRestart = onSaveAndRestart
         self.keyboardCatalog = loadKeyboardCatalog()
 
-        let window = NSWindow(
+        let window = ConfigEditorWindow(
             contentRect: NSRect(x: 0, y: 0, width: 840, height: 760),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
@@ -624,6 +897,8 @@ final class ConfigEditorWindowController: NSWindowController {
         revisionPopUpButton.action = #selector(revisionSelectionChanged)
         weatherEnabledButton.target = self
         weatherEnabledButton.action = #selector(weatherToggleChanged)
+        reverseLayoutOrderButton.target = self
+        reverseLayoutOrderButton.action = #selector(reverseLayoutOrderChanged)
         weatherCityField.target = self
         weatherCityField.action = #selector(applyWeatherFromControls)
         weatherCityField.placeholderString = "City for wttr.in, for example Orenburg"
@@ -661,7 +936,7 @@ final class ConfigEditorWindowController: NSWindowController {
         weatherControls.alignment = .centerY
 
         let refreshLayoutsButton = makeButton(title: "Refresh Languages", action: #selector(refreshLanguages))
-        let layoutsHeader = makeHeaderRow(label: layoutsLabel, trailingViews: [refreshLayoutsButton])
+        let layoutsHeader = makeHeaderRow(label: layoutsLabel, trailingViews: [reverseLayoutOrderButton, refreshLayoutsButton])
 
         let helperStack = NSStackView(views: [
             keyboardHeader,
@@ -734,8 +1009,13 @@ final class ConfigEditorWindowController: NSWindowController {
         loadConfigFromDisk(statusMessage: statusMessage)
         syncKeyboardSelectionFromConfig()
         syncWeatherControlsFromConfig()
-        refreshSystemLayouts(applyToConfig: true)
+        refreshSystemLayouts(applyToConfig: false)
+        syncLayoutControlsFromConfig()
         updateDetectedDevicesView(with: [], statusMessage: nil)
+
+        if !configHasLayouts() && !detectedSystemLayouts.isEmpty {
+            applyDetectedLayoutsToConfig(statusMessage: "Applied detected system languages to config.", showAlertOnFailure: false)
+        }
 
         if !configHasDevices() && selectedRevision != nil {
             applySelectedKeyboardToConfig(statusMessage: "Applied selected keyboard profile to config.")
@@ -982,6 +1262,14 @@ final class ConfigEditorWindowController: NSWindowController {
         return !devices.isEmpty
     }
 
+    private func configHasLayouts() -> Bool {
+        guard let config = try? parseConfigObject(), let layouts = config["layouts"] as? [String] else {
+            return false
+        }
+
+        return !layouts.isEmpty
+    }
+
     private func parseConfigObject() throws -> [String: Any] {
         guard let data = textView.string.data(using: .utf8) else {
             throw NSError(domain: "QMKHIDHost", code: 10, userInfo: [NSLocalizedDescriptionKey: "Config contains invalid UTF-8 data."])
@@ -1007,16 +1295,6 @@ final class ConfigEditorWindowController: NSWindowController {
             }
             setStatus("Unable to update config from helpers.", isError: true)
         }
-    }
-
-    private func formattedJSONString(from object: Any) throws -> String {
-        let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
-        guard var formattedText = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: "QMKHIDHost", code: 12, userInfo: [NSLocalizedDescriptionKey: "Failed to render formatted JSON."])
-        }
-
-        formattedText.append("\n")
-        return formattedText
     }
 
     private func canonicalJSONSignature(for value: Any) -> String? {
@@ -1051,6 +1329,39 @@ final class ConfigEditorWindowController: NSWindowController {
         }
     }
 
+    private func detectedLayoutCodesForConfig() -> [String] {
+        let codes = detectedSystemLayouts.map(\.code)
+        if reverseLayoutOrderButton.state == .on {
+            return Array(codes.reversed())
+        }
+
+        return codes
+    }
+
+    private func syncLayoutControlsFromConfig() {
+        let systemCodes = detectedSystemLayouts.map(\.code)
+        guard
+            !systemCodes.isEmpty,
+            let config = try? parseConfigObject(),
+            let layouts = config["layouts"] as? [String]
+        else {
+            reverseLayoutOrderButton.state = .off
+            return
+        }
+
+        reverseLayoutOrderButton.state = layouts == Array(systemCodes.reversed()) ? .on : .off
+    }
+
+    private func applyDetectedLayoutsToConfig(statusMessage: String, showAlertOnFailure: Bool = true) {
+        do {
+            var config = try parseConfigObject()
+            config["layouts"] = detectedLayoutCodesForConfig()
+            writeConfigObject(config, statusMessage: statusMessage, showAlertOnFailure: showAlertOnFailure)
+        } catch {
+            setStatus("Fix JSON to use language helper.", isError: true)
+        }
+    }
+
     private func refreshSystemLayouts(applyToConfig: Bool) {
         detectedSystemLayouts = availableSystemLayouts()
         if detectedSystemLayouts.isEmpty {
@@ -1060,7 +1371,8 @@ final class ConfigEditorWindowController: NSWindowController {
         }
 
         layoutsView.string = detectedSystemLayouts
-            .map { "\($0.code) -> \($0.localizedName)" }
+            .enumerated()
+            .map { "\($0.offset + 1). \($0.element.code) -> \($0.element.localizedName)" }
             .joined(separator: "\n")
         resetTextViewport(for: layoutsView)
 
@@ -1068,13 +1380,12 @@ final class ConfigEditorWindowController: NSWindowController {
             return
         }
 
-        do {
-            var config = try parseConfigObject()
-            config["layouts"] = detectedSystemLayouts.map(\.code)
-            writeConfigObject(config, statusMessage: "Updated layouts from system input sources.", showAlertOnFailure: false)
-        } catch {
-            setStatus("Fix JSON to use language helper.", isError: true)
-        }
+        applyDetectedLayoutsToConfig(
+            statusMessage: reverseLayoutOrderButton.state == .on
+                ? "Updated layouts from system input sources in reverse order."
+                : "Updated layouts from system input sources.",
+            showAlertOnFailure: false
+        )
     }
 
     private func saveCurrentConfig(restartHost: Bool) {
@@ -1108,42 +1419,6 @@ final class ConfigEditorWindowController: NSWindowController {
         alert.messageText = title
         alert.informativeText = message
         alert.runModal()
-    }
-
-    private func availableSystemLayouts() -> [SystemLayout] {
-        let inputSources = TISCreateInputSourceList(nil, false).takeRetainedValue() as NSArray
-        var layouts: [SystemLayout] = []
-        var seenCodes = Set<String>()
-
-        for case let inputSource as TISInputSource in inputSources {
-            guard stringProperty(for: inputSource, key: kTISPropertyInputSourceType) == (kTISTypeKeyboardLayout as String) else {
-                continue
-            }
-
-            if let isEnabled = boolProperty(for: inputSource, key: kTISPropertyInputSourceIsEnabled), !isEnabled {
-                continue
-            }
-
-            if let isSelectCapable = boolProperty(for: inputSource, key: kTISPropertyInputSourceIsSelectCapable), !isSelectCapable {
-                continue
-            }
-
-            guard
-                let inputSourceID = stringProperty(for: inputSource, key: kTISPropertyInputSourceID),
-                let localizedName = stringProperty(for: inputSource, key: kTISPropertyLocalizedName)
-            else {
-                continue
-            }
-
-            let code = inputSourceID.split(separator: ".").last.map(String.init) ?? inputSourceID
-            if seenCodes.insert(code).inserted {
-                layouts.append(SystemLayout(code: code, localizedName: localizedName))
-            }
-        }
-
-        return layouts.sorted { lhs, rhs in
-            lhs.code.localizedCaseInsensitiveCompare(rhs.code) == .orderedAscending
-        }
     }
 
     private func weatherCity(from url: String) -> String? {
@@ -1194,86 +1469,8 @@ final class ConfigEditorWindowController: NSWindowController {
         }
     }
 
-    private func parseDetectedHIDDevices(from output: String) -> [DetectedHIDDevice] {
-        let cleanedOutput = output.replacingOccurrences(
-            of: #"\u{001B}\[[0-9;]*m"#,
-            with: "",
-            options: .regularExpression
-        )
-
-        let pattern = #"HID: VID=([0-9A-Fa-f]+), PID=([0-9A-Fa-f]+), usage_page=([^,]+), usage=([^,]+), productId=(0x[0-9A-Fa-f]+) product="([^"]*)""#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return []
-        }
-
-        let nsOutput = cleanedOutput as NSString
-        let matches = regex.matches(in: cleanedOutput, range: NSRange(location: 0, length: nsOutput.length))
-        return matches.compactMap { match in
-            guard match.numberOfRanges >= 7 else {
-                return nil
-            }
-
-            let vendorId = nsOutput.substring(with: match.range(at: 1))
-            let usagePage = Int(nsOutput.substring(with: match.range(at: 3)))
-            let usage = Int(nsOutput.substring(with: match.range(at: 4)))
-            let productId = nsOutput.substring(with: match.range(at: 5))
-            let productName = nsOutput.substring(with: match.range(at: 6))
-
-            return DetectedHIDDevice(
-                vendorId: "0x\(vendorId.lowercased())",
-                productId: productId.lowercased(),
-                usagePage: usagePage,
-                usage: usage,
-                productName: productName,
-                rawLine: nsOutput.substring(with: match.range)
-            )
-        }
-    }
-
-    private func runProcess(executableURL: URL, arguments: [String], environment: [String: String] = [:]) throws -> String {
-        let process = Process()
-        let pipe = Pipe()
-        var mergedEnvironment = ProcessInfo.processInfo.environment
-        for (key, value) in environment {
-            mergedEnvironment[key] = value
-        }
-
-        process.executableURL = executableURL
-        process.arguments = arguments
-        process.environment = mergedEnvironment
-        process.standardOutput = pipe
-        process.standardError = pipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(decoding: data, as: UTF8.self)
-
-        guard process.terminationStatus == 0 else {
-            let message = output.trimmingCharacters(in: .whitespacesAndNewlines)
-            throw NSError(
-                domain: "QMKHIDHost",
-                code: Int(process.terminationStatus),
-                userInfo: [NSLocalizedDescriptionKey: message.isEmpty ? "Process exited with status \(process.terminationStatus)." : message]
-            )
-        }
-
-        return output
-    }
-
     private func matchedRevision(for devices: [DetectedHIDDevice]) -> (vendor: Int, model: Int, revision: Int, device: DetectedHIDDevice)? {
-        for (vendorIndex, vendor) in keyboardCatalog.enumerated() {
-            for (modelIndex, model) in vendor.models.enumerated() {
-                for (revisionIndex, revision) in model.revisions.enumerated() {
-                    for device in devices where revision.matchers.contains(where: { $0.matches(device) }) {
-                        return (vendorIndex, modelIndex, revisionIndex, device)
-                    }
-                }
-            }
-        }
-
-        return nil
+        matchedCatalogSelection(in: keyboardCatalog, for: devices)
     }
 
     private func fallbackDetectedDevice(from devices: [DetectedHIDDevice]) -> DetectedHIDDevice? {
@@ -1282,24 +1479,6 @@ final class ConfigEditorWindowController: NSWindowController {
         }
 
         return devices.first
-    }
-
-    private func stringProperty(for inputSource: TISInputSource, key: CFString) -> String? {
-        guard let property = TISGetInputSourceProperty(inputSource, key) else {
-            return nil
-        }
-
-        let value = Unmanaged<CFTypeRef>.fromOpaque(property).takeUnretainedValue()
-        return value as? String
-    }
-
-    private func boolProperty(for inputSource: TISInputSource, key: CFString) -> Bool? {
-        guard let property = TISGetInputSourceProperty(inputSource, key) else {
-            return nil
-        }
-
-        let value = Unmanaged<CFTypeRef>.fromOpaque(property).takeUnretainedValue()
-        return (value as? NSNumber)?.boolValue
     }
 
     @objc
@@ -1338,6 +1517,19 @@ final class ConfigEditorWindowController: NSWindowController {
     @objc
     private func refreshLanguages() {
         refreshSystemLayouts(applyToConfig: true)
+    }
+
+    @objc
+    private func reverseLayoutOrderChanged() {
+        guard !detectedSystemLayouts.isEmpty else {
+            return
+        }
+
+        applyDetectedLayoutsToConfig(
+            statusMessage: reverseLayoutOrderButton.state == .on
+                ? "Updated layouts using reverse system order."
+                : "Updated layouts using system order."
+        )
     }
 
     @objc
