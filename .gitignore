@@ -22,3 +22,11 @@ qmk-hid-host.json
 
 ### mctechnology ###
 MY_README_qmk-hid-host.md
+
+### macOS ###
+.DS_Store
+
+### graphify (machine-specific / regenerable) ###
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/cache/
