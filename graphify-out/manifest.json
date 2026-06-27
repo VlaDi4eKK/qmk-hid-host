@@ -1,0 +1,114 @@
+{
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/build.rs": {
+    "mtime": 1782548052.0313253,
+    "hash": "7069eb831a821a07363fde640d4a4950"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/macos/MenuBarApp/main.swift": {
+    "mtime": 1782548052.0431335,
+    "hash": "ca9b3a668c3e74ed7d663651f0687eed"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/data_type.rs": {
+    "mtime": 1782548126.9839885,
+    "hash": "18e1eb6a5f530131ddbd68ca7e5aab2b"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/config.rs": {
+    "mtime": 1782548052.0433755,
+    "hash": "86c775e7fe1957c00c55dda1c264d285"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/keyboard.rs": {
+    "mtime": 1782548052.0435407,
+    "hash": "7c177108e57eb9cfdad3d129ae8b3cec"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/main.rs": {
+    "mtime": 1782548126.984122,
+    "hash": "80b0f37b545b8a8c24254ddf6bfc1dc8"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers.rs": {
+    "mtime": 1782548052.0436816,
+    "hash": "ce491d9fb0e5bb50754bfc8370314e4c"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/utils.rs": {
+    "mtime": 1782548052.044911,
+    "hash": "37d16512615e1d3f158fcf3ccb2613d0"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/weather.rs": {
+    "mtime": 1782548126.9843507,
+    "hash": "f8f05725ba9b3df25d4152a7c3cfe13a"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/layout.rs": {
+    "mtime": 1782548052.0438368,
+    "hash": "8f9d1921fb2de99232fbb6a8cd9ea4b7"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/_base.rs": {
+    "mtime": 1782548052.0437756,
+    "hash": "affefa44b0b63c6768974818414edb3f"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/time.rs": {
+    "mtime": 1782548052.0444875,
+    "hash": "07812ed4431c60795f63247a87212650"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/media.rs": {
+    "mtime": 1782548052.0441086,
+    "hash": "5b093b03d0d12212615d0e95d281ec30"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/volume.rs": {
+    "mtime": 1782548052.0445514,
+    "hash": "b590da60e04937f74cb91a82616a7078"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/relay.rs": {
+    "mtime": 1782548052.0444083,
+    "hash": "7801516d90f2e832da19e3e90876964c"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/layout/macos.rs": {
+    "mtime": 1782548052.0439978,
+    "hash": "e4962fb4143a2787de3435c44623ee3a"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/layout/windows.rs": {
+    "mtime": 1782548052.0440562,
+    "hash": "215718446caf7b3d6c7c1631445c5cc1"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/layout/linux.rs": {
+    "mtime": 1782548052.0439334,
+    "hash": "0cb95b391a64c6e28ba08f22959a8e9c"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/volume/macos.rs": {
+    "mtime": 1782548052.0447218,
+    "hash": "f514110b57d0d498574c1fb533dbcbd1"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/volume/windows.rs": {
+    "mtime": 1782548052.0447817,
+    "hash": "3c0c8f69bbb9dc8e0c062ef2ab2e15fa"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/volume/linux.rs": {
+    "mtime": 1782548052.044638,
+    "hash": "6c7574df9dc9cb04ce0b91652ba5d45e"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/media/macos.rs": {
+    "mtime": 1782548052.044258,
+    "hash": "ea46f92c34736fef67e4eaac056c52aa"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/media/windows.rs": {
+    "mtime": 1782548052.044343,
+    "hash": "20e4bb5b1ddaea53140532e1d38a8ece"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/providers/media/linux.rs": {
+    "mtime": 1782548126.984252,
+    "hash": "593dab6d2286cc0af1d0e4492f554a04"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/utils/print_hids.rs": {
+    "mtime": 1782548052.0450072,
+    "hash": "7b34afec73235081793aea02fce1fc81"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/README.md": {
+    "mtime": 1782548126.9838543,
+    "hash": "39ffab5b2c05aefc8cf16fd9b337f856"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/macos/MenuBarApp/StatusIcon.svg": {
+    "mtime": 1782548052.043014,
+    "hash": "8f833eba5e990d7aef12f84b956013cf"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/macos/MenuBarApp/AppIcon.jpg": {
+    "mtime": 1782548052.0428603,
+    "hash": "e4b87c4c332ca1b451c67f5aba7d388b"
+  }
+}
