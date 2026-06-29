@@ -7,6 +7,18 @@
     "mtime": 1782548052.0431335,
     "hash": "ca9b3a668c3e74ed7d663651f0687eed"
   },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/_bmad/scripts/resolve_customization.py": {
+    "mtime": 1782548732.2748244,
+    "hash": "16f14028b16bc561d53c18342a49fc7f"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/_bmad/scripts/resolve_config.py": {
+    "mtime": 1782548732.274636,
+    "hash": "7edb991ee8e7ad7cc7eec00800232a2d"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/_bmad/scripts/memlog.py": {
+    "mtime": 1782548732.2742898,
+    "hash": "28b2424abcb41c04b704b2a4f6baffaf"
+  },
   "/Users/vladi4ekk/AI/Pets/qmk-hid-host/src/data_type.rs": {
     "mtime": 1782548126.9839885,
     "hash": "18e1eb6a5f530131ddbd68ca7e5aab2b"
@@ -102,6 +114,26 @@
   "/Users/vladi4ekk/AI/Pets/qmk-hid-host/README.md": {
     "mtime": 1782548126.9838543,
     "hash": "39ffab5b2c05aefc8cf16fd9b337f856"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/CLAUDE.md": {
+    "mtime": 1782548741.0839624,
+    "hash": "da79aa9343cd2b362206f03762160abc"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/_bmad-output/planning-artifacts/epics.md": {
+    "mtime": 1782716182.574541,
+    "hash": "ee3bfed7c365bf1b06317ea565d40eb7"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/_bmad/core/config.yaml": {
+    "mtime": 1782548732.341126,
+    "hash": "78405de51078a5071aa7705507325665"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/_bmad/bmm/config.yaml": {
+    "mtime": 1782548732.3408778,
+    "hash": "6487beb021da9345ad82e2c8e829a510"
+  },
+  "/Users/vladi4ekk/AI/Pets/qmk-hid-host/_bmad/_config/manifest.yaml": {
+    "mtime": 1782548732.3591242,
+    "hash": "afa707f3cb3a439d4ac5902a982c5e4c"
   },
   "/Users/vladi4ekk/AI/Pets/qmk-hid-host/macos/MenuBarApp/StatusIcon.svg": {
     "mtime": 1782548052.043014,
